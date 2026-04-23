@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0ea5e9">
+<title>PSF Conditionnement — Silver Food</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+<style>
+:root{
+  --bg0:#050c18;--bg1:#0b1828;--bg2:#0f2035;--bg3:#172a3f;
+  --cyan:#0ea5e9;--indigo:#6366f1;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;
+  --tx:#e2e8f0;--tx2:#b8ccd8;--tx3:#5a7a98;--tx4:#2a4a65;
+  --bd:rgba(255,255,255,0.07);--rd:12px;--rds:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg0);font-family:'DM Sans',system-ui,sans-serif;color:var(--tx);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+select option{background:var(--bg1);color:var(--tx)}
+
+/* LOGIN */
+#login-screen{
+  position:fixed;inset:0;background:linear-gradient(160deg,#050c18,#0a1e36,#050c18);
+  display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px
+}
+.login-card{
+  background:linear-gradient(145deg,rgba(15,32,53,0.97),rgba(11,24,40,0.99));
+  border:1px solid rgba(14,165,233,0.2);border-radius:22px;
+  padding:44px 36px 40px;max-width:380px;width:100%;text-align:center;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6)
+}
+.login-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:38px;letter-spacing:4px;
+  background:linear-gradient(135deg,var(--cyan),var(--indigo));-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text}
+.login-sub{font-size:10px;color:var(--tx3);letter-spacing:2px;text-transform:uppercase;margin-top:4px;margin-bottom:8px}
+.login-title{font-size:13px;color:var(--tx4);margin-bottom:32px;line-height:1.6}
+.btn-ms{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
+  background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;border-radius:var(--rds);
+  padding:15px 20px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .2s;letter-spacing:.2px;font-family:'DM Sans',sans-serif
+}
+.btn-ms:hover{background:linear-gradient(135deg,#3B82F6,#2563EB);transform:translateY(-1px)}
+.btn-ms:disabled{opacity:0.6;cursor:wait;transform:none}
+#login-error{
+  margin-top:14px;padding:12px;border-radius:var(--rds);
+  background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+  color:var(--red);font-size:12px;display:none;text-align:left;line-height:1.5
+}
+#redirect-helper{
+  margin-top:14px;padding:14px;border-radius:var(--rds);
+  background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);
+  color:var(--amber);font-size:12px;display:none;text-align:left
+}
+#redirect-url-box{
+  background:rgba(0,0,0,0.3);border-radius:6px;padding:8px;
+  font-family:monospace;font-size:10px;word-break:break-all;
+  margin:8px 0;color:var(--tx);cursor:pointer;border:1px solid rgba(255,255,255,0.1)
+}
+.login-note{font-size:10px;color:var(--tx4);margin-top:20px;line-height:1.6}
+
+/* APP */
+#app{display:none;height:100vh;flex-direction:column;overflow:hidden}
+#app.visible{display:flex}
+header{
+  background:var(--bg1);border-bottom:1px solid var(--bg3);
+  display:flex;align-items:center;padding:0 16px;height:56px;flex-shrink:0;gap:12px
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan),var(--indigo));border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:0.08em;color:var(--tx)}
+.logo-sub{font-size:8px;color:var(--tx4);font-weight:700;letter-spacing:0.15em}
+nav{display:flex;gap:2px;flex:1}
+.nav-btn{padding:6px 12px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:var(--tx3);font-size:11px;font-weight:700;border-bottom:2px solid transparent;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.nav-btn.active{background:rgba(14,165,233,0.12);color:#7dd3fc;border-bottom-color:var(--cyan)}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.sync-dot{width:7px;height:7px;border-radius:50%}
+.sync-spin{width:10px;height:10px;border:2px solid var(--cyan);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite}
+.user-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg1);border:1px solid var(--bg3);border-radius:20px}
+.user-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white;flex-shrink:0}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--tx3);padding:4px;display:flex;font-size:16px}
+select{background:var(--bg0);border:1px solid var(--bg3);color:var(--tx);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;padding:16px 16px 80px}
+.card{background:var(--bg1);border:1px solid var(--bg3);border-radius:var(--rd);padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.kpi{position:relative;overflow:hidden;background:var(--bg1);border:1px solid var(--bg3);border-radius:var(--rd);padding:20px}
+.kpi-bar{position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--rd) var(--rd) 0 0}
+.kpi-label{font-size:9px;color:var(--tx3);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px}
+.kpi-val{font-size:22px;font-weight:800;line-height:1;margin-bottom:2px}
+.kpi-sub{font-size:9px;color:var(--tx3);font-weight:600}
+.section-title{font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.form-label{font-size:9px;color:var(--tx3);font-weight:700;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:3px}
+.form-input{background:#06101e;border:1px solid #18304a;color:var(--tx);padding:8px 10px;border-radius:6px;font-size:12px;width:100%;outline:none;font-family:'DM Sans',sans-serif}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--indigo));border:none;color:white;padding:9px 14px;border-radius:var(--rds);cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif}
+.btn-primary:disabled{opacity:0.6;cursor:wait}
+.btn-sec{background:var(--bg3);border:1px solid #1e3a54;color:var(--tx3);padding:7px 11px;border-radius:var(--rds);cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif}
+.tbl{width:100%;border-collapse:separate;border-spacing:0 2px}
+.tbl th{font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0 8px 10px;text-align:left;border-bottom:1px solid var(--bg3);cursor:pointer;white-space:nowrap}
+.tbl td{padding:7px 8px;font-size:11px;color:var(--tx2);border-bottom:1px solid #0f1c2e;background:#070d1a}
+.badge{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;color:#7ab8d8}
+.calc-box{margin-top:14px;background:#060e1c;border-radius:8px;padding:12px;border:1px solid var(--bg3)}
+.calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.calc-cell{background:var(--bg1);border-radius:6px;padding:7px 8px}
+.calc-k{font-size:9px;color:var(--tx3)}
+.calc-v{font-size:12px;font-weight:700;color:var(--tx)}
+.saved-msg{margin-top:10px;color:var(--green);font-size:11px;font-weight:700}
+.err-banner{background:#1a0a0a;padding:10px 20px;font-size:11px;color:var(--red);display:flex;justify-content:space-between;align-items:center}
+
+/* PLANNING */
+.plan-poste{padding:16px;background:var(--bg1);border:1px solid var(--bg3);border-radius:var(--rd)}
+.progress-track{background:#0b1828;border-radius:4px;height:7px;margin-bottom:12px;overflow:hidden}
+.progress-bar{height:100%;border-radius:4px;transition:width 0.5s}
+.stat-cell{background:#060e1c;border-radius:6px;padding:6px 8px}
+.adj-btn{background:var(--bg3);border:none;color:var(--tx3);width:18px;height:18px;border-radius:3px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+
+/* BOTTOM NAV */
+#bot-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg1);border-top:1px solid var(--bg3);
+  display:flex;z-index:200;padding:4px 0
+}
+.bot-btn{flex:1;border:none;cursor:pointer;padding:8px 4px 5px;background:transparent;color:var(--tx3);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:700;border-top:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif}
+.bot-btn.active{color:#7dd3fc;border-top-color:var(--cyan)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">PSF</div>
+    <div class="login-sub">Silver Food — Conditionnement</div>
+    <div class="login-title">Connectez-vous avec votre compte Microsoft<br>pour accéder à la gestion PSF</div>
+    <button class="btn-ms" id="btn-login" onclick="doLogin()">
+      <svg class="ms-logo" viewBox="0 0 21 21"><path d="M10.5 0H0v10.5h10.5V0z" fill="#f25022"/><path d="M21 0H10.5v10.5H21V0z" fill="#7fba00"/><path d="M10.5 10.5H0V21h10.5V10.5z" fill="#00a4ef"/><path d="M21 10.5H10.5V21H21V10.5z" fill="#ffb900"/></svg>
+      Se connecter avec Microsoft
+    </button>
+    <div id="login-error"></div>
+    <div id="redirect-helper">
+      <strong>⚠️ Ajouter cette URL dans Azure :</strong>
+      <div id="redirect-url-box" onclick="copyRedirectUrl()">…</div>
+      Copiez et ajoutez-la dans Azure → PSF-APP → Authentication → SPA
+    </div>
+    <div class="login-note">Données stockées sur SharePoint Silver Food.<br>Accès réservé aux membres de l'organisation.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="logo-wrap">
+      <div class="logo-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">PSF CONDITIONNEMENT</div>
+        <div class="logo-sub">SILVER FOOD</div>
+      </div>
+    </div>
+    <nav id="main-nav"></nav>
+    <div class="hdr-right">
+      <div id="sync-ind"></div>
+      <button class="icon-btn" onclick="reloadData()" title="Recharger">⟳</button>
+      <select id="filter-mois" onchange="applyFilter()">
+        <option value="Tous">Tous</option>
+      </select>
+      <div class="user-chip">
+        <div class="user-av" id="user-av">?</div>
+        <span id="user-name" style="font-size:10px;color:var(--tx3);font-weight:600"></span>
+      </div>
+      <button class="icon-btn" onclick="doLogout()" title="Déconnexion">⎋</button>
+    </div>
+  </header>
+  <div id="sync-err-banner" class="err-banner" style="display:none">
+    <span id="sync-err-msg"></span>
+    <button onclick="document.getElementById('sync-err-banner').style.display='none'" style="background:none;border:none;color:var(--red);cursor:pointer">✕</button>
+  </div>
+  <div id="content"></div>
+  <nav id="bot-nav"></nav>
+</div>
+
+<div id="react-root"></div>
+
+<script>
+/* ============================================================
+   CONFIGURATION — identique à TalemApp
+   ============================================================ */
+const CLIENT_ID = 'bd36d1f6-834c-4e79-a7ef-9ef988e38359';
+const TENANT_ID = '5c47add6-913a-41a7-9f2a-551fcaa9f602';
+const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
+const SCOPES = ['Files.ReadWrite.All','Sites.ReadWrite.All','User.Read'];
+const SITE_HOST = 'silverfood0.sharepoint.com';
+const SITE_PATH = '/sites/mprSFO';
+const FILE_PATH = 'Documents partages/PSF-APP/PSF_DB.xlsx';
+const SHEET_NAME = 'DATA';
+
+/* ============================================================
+   MSAL — exactement comme TalemApp
+   ============================================================ */
+let msalApp = null;
+let redirectUri = '';
+let currentUser = null;
+let _siteId = null, _driveId = null, _fileId = null;
+
+async function initAuth(){
+  try{
+    const resp = await msalApp.handleRedirectPromise();
+    if(resp){ currentUser = resp.account; msalApp.setActiveAccount(currentUser); }
+    else {
+      const accs = msalApp.getAllAccounts();
+      if(accs.length){ currentUser = accs[0]; msalApp.setActiveAccount(currentUser); }
+    }
+    if(currentUser){ await showApp(); }
+    else { showLogin(); }
+  } catch(e){
+    console.error(e);
+    showLogin();
+    handleAuthError(e);
+  }
+}
+
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').classList.remove('visible');
+}
+
+async function doLogin(){
+  document.getElementById('btn-login').disabled = true;
+  document.getElementById('btn-login').innerHTML = '<span style="width:18px;height:18px;border:2px solid white;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;display:inline-block"></span> Connexion...';
+  try{ await msalApp.loginRedirect({ scopes: SCOPES, prompt:'select_account' }); }
+  catch(e){ handleAuthError(e); document.getElementById('btn-login').disabled=false; document.getElementById('btn-login').innerHTML='<svg style="width:20px;height:20px" viewBox="0 0 21 21"><path d="M10.5 0H0v10.5h10.5V0z" fill="#f25022"/><path d="M21 0H10.5v10.5H21V0z" fill="#7fba00"/><path d="M10.5 10.5H0V21h10.5V10.5z" fill="#00a4ef"/><path d="M21 10.5H10.5V21H21V10.5z" fill="#ffb900"/></svg> Se connecter avec Microsoft'; }
+}
+
+function doLogout(){
+  msalApp.logoutRedirect({ postLogoutRedirectUri: redirectUri });
+}
+
+async function getToken(){
+  try{
+    const r = await msalApp.acquireTokenSilent({ scopes: SCOPES, account: currentUser });
+    return r.accessToken;
+  } catch(e){
+    if(e instanceof msal.InteractionRequiredAuthError){
+      await msalApp.acquireTokenRedirect({ scopes: SCOPES });
+    }
+    throw e;
+  }
+}
+
+function handleAuthError(e){
+  const msg = e.message || '';
+  const el = document.getElementById('login-error');
+  if(el){ el.textContent = msg.includes('AADSTS50011') ? '⚠️ URL de redirection non autorisée. Voir ci-dessous.' : '⚠️ Erreur : '+msg; el.style.display='block'; }
+  if(msg.includes('AADSTS50011') || msg.includes('redirect_uri')){
+    const rh = document.getElementById('redirect-helper');
+    const rb = document.getElementById('redirect-url-box');
+    if(rh && rb){ rb.textContent = redirectUri; rh.style.display='block'; }
+  }
+}
+
+function copyRedirectUrl(){
+  navigator.clipboard.writeText(redirectUri).catch(()=>{});
+}
+
+/* ============================================================
+   GRAPH API
+   ============================================================ */
+async function gCall(method, ep, body=null){
+  const token = await getToken();
+  const opts = { method, headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' } };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(GRAPH_BASE + ep, opts);
+  if(!res.ok){
+    const t = await res.text(); throw new Error('Graph '+res.status+': '+t.slice(0,300));
+  }
+  return res.status===204 ? null : res.json();
+}
+const gGet  = (ep) => gCall('GET', ep);
+const gPost = (ep, b) => gCall('POST', ep, b);
+const gPatch = (ep, b) => gCall('PATCH', ep, b);
+
+async function getFileIds(){
+  if(_driveId && _fileId) return;
+  const site = await gGet(`/sites/${SITE_HOST}:${SITE_PATH}`);
+  _siteId = site.id;
+  const fp = FILE_PATH.split('/').map(encodeURIComponent).join('/');
+  const file = await gGet(`/sites/${_siteId}/drive/root:/${fp}?$select=id,parentReference`);
+  _fileId = file.id;
+  _driveId = file.parentReference.driveId;
+}
+
+const WB = () => `/drives/${_driveId}/items/${_fileId}/workbook`;
+
+async function loadFromSP(){
+  await getFileIds();
+  const data = await gGet(`${WB()}/worksheets('${SHEET_NAME}')/usedRange?$select=values`);
+  if(!data?.values || data.values.length <= 1) return [];
+  return data.values.slice(1)
+    .filter(r => r[0] !== null && r[0] !== '')
+    .map(r => ({
+      id: r[0], date: r[1]||'', mois: r[2]||'', annee: r[3]||'2026',
+      calibre: r[4]||'', machine: r[5]||'',
+      nbBoites: Number(r[6])||0, effectif: Number(r[7])||0, dureeH: Number(r[8])||0,
+      duree: r[9]||'', heuresOp: Number(r[10])||0, hParBoite: Number(r[11])||0,
+      coutBoite: Number(r[12])||0, coutStandard: Number(r[13])||0,
+      coutTotalReel: Number(r[14])||0, coutTotalStandard: Number(r[15])||0,
+      ecart: Number(r[16])||0, details: r[17]||'', trs: Number(r[18])||0, operation: r[19]||''
+    }));
+}
+
+const KEYS = ['id','date','mois','annee','calibre','machine','nbBoites','effectif','dureeH','duree','heuresOp','hParBoite','coutBoite','coutStandard','coutTotalReel','coutTotalStandard','ecart','details','trs','operation'];
+const LCOL = String.fromCharCode(64 + KEYS.length); // T
+
+async function saveAllToSP(entries){
+  await getFileIds();
+  // Clear data rows
+  await gPost(`${WB()}/worksheets('${SHEET_NAME}')/range(address='A2:${LCOL}2001')/clear`, {applyTo:'contents'});
+  if(!entries.length) return;
+  const values = entries.map(e => KEYS.map(k => e[k] ?? ''));
+  await gPatch(`${WB()}/worksheets('${SHEET_NAME}')/range(address='A2:${LCOL}${1+entries.length}')`, {values});
+}
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+let allEntries = [];
+let filterMois = 'Tous';
+let currentPage = 'dashboard';
+let syncing = false;
+let syncErr = null;
+
+const CALIBRES = ['1/4 Club 125g','Ovaline 80g','1/6 RR 125g','Pelle 125g','Ronde 80g','Thon 160g'];
+const POSTES = [
+  {id:'ETU_CAS_125',nom:'Etuieuse 125g Castello',   effMin:5, effMax:12,capH:3200, color:'#38bdf8'},
+  {id:'ETU_HER_P1', nom:'Etuieuse 80g Hermassa P1', effMin:5, effMax:7, capH:4500, color:'#a78bfa'},
+  {id:'ETU_AIT_125',nom:'Etuieuse 125g Aitmelloul', effMin:5, effMax:12,capH:3000, color:'#34d399'},
+  {id:'ETU_CAS_P3', nom:'Etuieuse 80g Castello P3', effMin:5, effMax:7, capH:4200, color:'#fbbf24'},
+  {id:'ETU_HER_125',nom:'Etuieuse 125g Hermassa',   effMin:5, effMax:12,capH:3100, color:'#fb7185'},
+  {id:'FAR_AIT',    nom:'Fardeleuse Ait Melloul',   effMin:3, effMax:4, capH:8000, color:'#f97316'},
+  {id:'FAR_CER',    nom:'Fardeleuse Cermex',        effMin:6, effMax:18,capH:12000,color:'#e879f9'},
+  {id:'PALET',      nom:'Palettiseur',               effMin:2, effMax:2, capH:15000,color:'#2dd4bf'},
+  {id:'CONV_MSE',   nom:'Conv. MSE Manuel',          effMin:24,effMax:44,capH:2500, color:'#94a3b8'},
+];
+const CP = {'1/4 Club 125g':['ETU_CAS_125','ETU_AIT_125','FAR_AIT','PALET'],'Ovaline 80g':['ETU_HER_P1','ETU_CAS_P3','FAR_CER','PALET'],'1/6 RR 125g':['ETU_CAS_125','ETU_AIT_125','FAR_CER','PALET'],'Pelle 125g':['ETU_CAS_125','ETU_HER_125','FAR_CER','PALET'],'Ronde 80g':['ETU_HER_P1','ETU_CAS_P3','FAR_AIT','PALET'],'Thon 160g':['ETU_HER_125','FAR_CER','PALET']};
+const CSTD = {'1/4 Club 125g':0.118,'Ovaline 80g':0.095,'1/6 RR 125g':0.125,'Pelle 125g':0.132,'Ronde 80g':0.088,'Thon 160g':0.145};
+const OPS = ['Mise en Etui','Fardelage','Palettisation','Marquage','Soufflage','Accumulation','Conditionnement'];
+const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+const fmt = (n,d=0) => (typeof n==='number'?n:0).toLocaleString('fr-MA',{minimumFractionDigits:d,maximumFractionDigits:d});
+const cc  = p => p<70?'#22c55e':p<90?'#f59e0b':'#ef4444';
+const cl  = p => p<70?'Normal':p<90?'Attention':'Critique';
+
+/* ============================================================
+   SHOW APP
+   ============================================================ */
+async function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+
+  // User info
+  const name = currentUser.name || currentUser.username || 'User';
+  document.getElementById('user-name').textContent = name.split(' ')[0];
+  document.getElementById('user-av').textContent = name[0].toUpperCase();
+
+  // Build nav
+  const pages = [{id:'dashboard',label:'📊 Dashboard'},{id:'saisie',label:'✏️ Saisie'},{id:'planning',label:'📅 Planning'},{id:'implantation',label:'🗺️ Plan'}];
+  document.getElementById('main-nav').innerHTML = pages.map(p=>`<button class="nav-btn${p.id===currentPage?' active':''}" onclick="goPage('${p.id}')">${p.label}</button>`).join('');
+  document.getElementById('bot-nav').innerHTML = pages.map(p=>`<button class="bot-btn${p.id===currentPage?' active':''}" onclick="goPage('${p.id}')"><span style="font-size:16px">${p.label.split(' ')[0]}</span>${p.label.split(' ').slice(1).join(' ')}</button>`).join('');
+
+  // Mois filter
+  const sel = document.getElementById('filter-mois');
+  sel.innerHTML = '<option value="Tous">Tous</option>' + MOIS.map(m=>`<option value="${m}">${m}</option>`).join('');
+
+  // Load data
+  await reloadData();
+}
+
+function goPage(id){
+  currentPage = id;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.textContent.includes(id==='dashboard'?'Dashboard':id==='saisie'?'Saisie':id==='planning'?'Planning':'Plan')));
+  document.querySelectorAll('.bot-btn').forEach(b=>b.classList.toggle('active', b.textContent.includes(id==='dashboard'?'Dashboard':id==='saisie'?'Saisie':id==='planning'?'Planning':'Plan')));
+  renderPage();
+}
+
+function applyFilter(){
+  filterMois = document.getElementById('filter-mois').value;
+  renderPage();
+}
+
+async function reloadData(){
+  setSyncing(true);
+  try{ allEntries = await loadFromSP(); }
+  catch(e){ showSyncErr(e.message); }
+  setSyncing(false);
+  renderPage();
+}
+
+function setSyncing(v){
+  syncing = v;
+  const el = document.getElementById('sync-ind');
+  if(v) el.innerHTML = '<div class="sync-spin"></div>';
+  else if(!syncErr) el.innerHTML = '<div class="sync-dot" style="background:#22c55e" title="Synchronisé"></div>';
+}
+
+function showSyncErr(msg){
+  syncErr = msg;
+  document.getElementById('sync-err-msg').textContent = '⚠️ '+msg;
+  document.getElementById('sync-err-banner').style.display='flex';
+  document.getElementById('sync-ind').innerHTML = '<div class="sync-dot" style="background:#ef4444" title="'+msg+'"></div>';
+}
+
+async function persistEntries(ne){
+  allEntries = ne;
+  setSyncing(true);
+  try{ await saveAllToSP(ne); syncErr=null; document.getElementById('sync-err-banner').style.display='none'; }
+  catch(e){ showSyncErr(e.message); }
+  setSyncing(false);
+  renderPage();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderPage(){
+  const filt = filterMois==='Tous' ? allEntries : allEntries.filter(e=>e.mois===filterMois);
+  const content = document.getElementById('content');
+  if(currentPage==='dashboard') content.innerHTML = renderDashboard(filt);
+  else if(currentPage==='saisie') renderSaisie();
+  else if(currentPage==='planning') content.innerHTML = renderPlanning();
+  else if(currentPage==='implantation') content.innerHTML = renderImplantation();
+  if(currentPage==='dashboard') initCharts(filt);
+}
+
+/* ---- DASHBOARD ---- */
+function renderDashboard(filt){
+  const tB=filt.reduce((s,e)=>s+e.nbBoites,0);
+  const tH=filt.reduce((s,e)=>s+e.heuresOp,0);
+  const tCR=filt.reduce((s,e)=>s+e.coutTotalReel,0);
+  const tCS=filt.reduce((s,e)=>s+e.coutTotalStandard,0);
+  const avgT=filt.length?filt.reduce((s,e)=>s+(e.trs||0),0)/filt.length:0;
+  const ec=tCR-tCS;
+  if(!filt.length) return `<div class="card" style="text-align:center;padding:60px"><div style="font-size:48px;margin-bottom:16px">📊</div><div style="font-size:16px;font-weight:700;color:var(--tx3);margin-bottom:8px">Aucune donnée</div><div style="font-size:12px;color:var(--tx4)">Commencez par saisir des opérations dans Saisie</div></div>`;
+  const kpis=[['📦 Boîtes',fmt(tB),'unités','#0ea5e9'],['⏱️ Heures',fmt(tH,1)+'h','main d\'œuvre','#8b5cf6'],['⚡ TRS Moyen',fmt(avgT,1)+'%','rendement',cc(avgT)],['💰 Coût Réel',fmt(tCR,0),'MAD','#10b981'],['📊 Standard',fmt(tCS,0),'MAD','#06b6d4'],['📉 Écart',(ec>=0?'+':'')+fmt(ec,0),'MAD',ec>0?'#ef4444':'#22c55e']];
+  return `
+    <div class="kpi-grid">${kpis.map(([l,v,s,c])=>`<div class="kpi"><div class="kpi-bar" style="background:${c}"></div><div class="kpi-label">${l}</div><div class="kpi-val" style="color:${c}">${v}</div><div class="kpi-sub">${s}</div></div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card"><div class="section-title">📈 Boîtes par Mois</div><canvas id="ch-boites" height="180"></canvas></div>
+      <div class="card"><div class="section-title">⚡ TRS (%)</div><canvas id="ch-trs" height="180"></canvas></div>
+    </div>
+    <div class="card"><div class="section-title">💰 Coût Réel vs Standard (MAD)</div><canvas id="ch-cout" height="150"></canvas></div>`;
+}
+
+function initCharts(filt){
+  const byMois = MOIS.map(m=>{
+    const me=allEntries.filter(e=>e.mois===m);
+    return{m:m.slice(0,4),b:me.reduce((s,e)=>s+e.nbBoites,0),cr:Math.round(me.reduce((s,e)=>s+e.coutTotalReel,0)),cs:Math.round(me.reduce((s,e)=>s+e.coutTotalStandard,0)),trs:me.length?parseFloat((me.reduce((s,e)=>s+(e.trs||0),0)/me.length).toFixed(1)):0};
+  }).filter(x=>x.b>0);
+  if(!byMois.length) return;
+  const labels = byMois.map(x=>x.m);
+  const opts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5a7a98',font:{size:10}}},tooltip:{backgroundColor:'#0b1828',borderColor:'#172a3f',borderWidth:1,titleColor:'#e2e8f0',bodyColor:'#b8ccd8'}},scales:{x:{ticks:{color:'#3d5a78',font:{size:10}},grid:{color:'#0f1c2e'}},y:{ticks:{color:'#3d5a78',font:{size:10}},grid:{color:'#0f1c2e'}}}};
+  new Chart(document.getElementById('ch-boites'),{type:'bar',data:{labels,datasets:[{label:'Boîtes',data:byMois.map(x=>x.b),backgroundColor:'rgba(14,165,233,0.7)',borderRadius:4}]},options:{...opts,plugins:{...opts.plugins,legend:{display:false}}}});
+  const gCtx=document.getElementById('ch-trs').getContext('2d');
+  const g=gCtx.createLinearGradient(0,0,0,180);g.addColorStop(0,'rgba(245,158,11,0.35)');g.addColorStop(1,'rgba(245,158,11,0)');
+  new Chart(gCtx,{type:'line',data:{labels,datasets:[{data:byMois.map(x=>x.trs),borderColor:'#f59e0b',backgroundColor:g,fill:true,tension:0.4,pointBackgroundColor:'#f59e0b',pointRadius:4}]},options:{...opts,plugins:{...opts.plugins,legend:{display:false}}}});
+  new Chart(document.getElementById('ch-cout'),{type:'bar',data:{labels,datasets:[{label:'Réel',data:byMois.map(x=>x.cr),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:3},{label:'Standard',data:byMois.map(x=>x.cs),backgroundColor:'rgba(34,197,94,0.7)',borderRadius:3}]},options:opts});
+}
+
+/* ---- SAISIE ---- */
+let editId = null;
+let sSearch = '';
+let sSortK = 'date';
+let sSortD = -1;
+let savedMsg = false;
+
+function renderSaisie(){
+  const filt = filterMois==='Tous'?allEntries:allEntries.filter(e=>e.mois===filterMois);
+  const shown = filt.filter(e=>!sSearch||(e.calibre+e.machine+e.date).toLowerCase().includes(sSearch.toLowerCase())).sort((a,b)=>(a[sSortK]>b[sSortK]?1:-1)*sSortD);
+  const content = document.getElementById('content');
+  content.innerHTML = `
+  <div style="display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start">
+    <div class="card">
+      <div style="font-size:14px;font-weight:800;color:var(--tx);margin-bottom:18px">${editId?'✏️ Modifier':'➕ Nouvelle Opération'}</div>
+      <div class="form-grid">
+        <div><label class="form-label">Date</label><input class="form-input" id="f-date" value="${new Date().toLocaleDateString('fr-MA')}"></div>
+        <div><label class="form-label">Mois</label><select class="form-input" id="f-mois">${MOIS.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div style="grid-column:1/-1"><label class="form-label">Calibre</label><select class="form-input" id="f-cal">${CALIBRES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div style="grid-column:1/-1"><label class="form-label">Machine / Poste</label><select class="form-input" id="f-mach">${POSTES.map(p=>`<option>${p.nom}</option>`).join('')}</select></div>
+        <div><label class="form-label">Nb. Boîtes</label><input class="form-input" id="f-nb" type="number" placeholder="0" oninput="updateCalc()"></div>
+        <div><label class="form-label">Effectif</label><input class="form-input" id="f-eff" type="number" placeholder="0" oninput="updateCalc()"></div>
+        <div><label class="form-label">Durée (h)</label><input class="form-input" id="f-dur" type="number" step="0.25" placeholder="0.00" oninput="updateCalc()"></div>
+        <div><label class="form-label">Opération</label><select class="form-input" id="f-op">${OPS.map(o=>`<option>${o}</option>`).join('')}</select></div>
+        <div style="grid-column:1/-1"><label class="form-label">Détails</label><input class="form-input" id="f-det" placeholder="Notes..."></div>
+      </div>
+      <div class="calc-box" id="calc-box" style="display:none">
+        <div style="font-size:9px;color:var(--tx3);font-weight:700;text-transform:uppercase">Calcul Automatique</div>
+        <div class="calc-grid" id="calc-grid"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn-primary" id="btn-save" onclick="submitEntry()" style="flex:1;justify-content:center" ${syncing?'disabled':''}>
+          💾 ${editId?'Modifier':'Enregistrer'}
+        </button>
+        ${editId?'<button class="btn-sec" onclick="cancelEdit()">✕</button>':''}
+      </div>
+      ${savedMsg?'<div class="saved-msg">✓ Enregistré sur SharePoint !</div>':''}
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:14px;font-weight:800;color:var(--tx)">Historique <span style="font-size:11px;color:var(--tx3)">(${shown.length})</span></div>
+        <input class="form-input" value="${sSearch}" placeholder="🔍 Rechercher..." oninput="sSearch=this.value;renderSaisie()" style="width:200px">
+      </div>
+      <div style="overflow-x:auto;max-height:480px;overflow-y:auto">
+        <table class="tbl">
+          <thead style="position:sticky;top:0;background:var(--bg1);z-index:1">
+            <tr>${[['date','Date'],['calibre','Calibre'],['machine','Poste'],['nbBoites','Boîtes'],['effectif','Eff.'],['dureeH','h'],['trs','TRS'],['coutTotalReel','Coût'],['ecart','Écart']].map(([k,l])=>`<th onclick="sortSaisie('${k}')">${l}${sSortK===k?(sSortD===-1?'↓':'↑'):''}</th>`).join('')}<th>Act.</th></tr>
+          </thead>
+          <tbody>
+            ${shown.slice(0,50).map(e=>{
+              const p=POSTES.find(x=>x.nom===e.machine);
+              return`<tr>
+                <td>${e.date}</td>
+                <td><span class="badge">${e.calibre}</span></td>
+                <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p?`<span style="display:inline-block;width:6px;height:6px;border-radius:2px;background:${p.color};margin-right:5px"></span>`:''}${e.machine}</td>
+                <td style="font-weight:700;color:var(--tx)">${fmt(e.nbBoites)}</td>
+                <td>${e.effectif}</td><td>${e.duree}</td>
+                <td style="font-weight:700;color:${cc(e.trs)}">${e.trs}%</td>
+                <td>${fmt(e.coutTotalReel,0)}</td>
+                <td style="font-weight:700;color:${e.ecart>0?'#ef4444':'#22c55e'}">${e.ecart>0?'+':''}${fmt(e.ecart,0)}</td>
+                <td><div style="display:flex;gap:4px">
+                  <button onclick="editEntry(${e.id})" style="background:var(--bg3);border:none;border-radius:4px;padding:4px 6px;cursor:pointer">✏️</button>
+                  <button onclick="delEntry(${e.id})" style="background:#1f1020;border:none;border-radius:4px;padding:4px 6px;cursor:pointer">🗑️</button>
+                </div></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+  if(editId){
+    const e=allEntries.find(x=>x.id===editId);
+    if(e){
+      document.getElementById('f-date').value=e.date;
+      document.getElementById('f-mois').value=e.mois;
+      document.getElementById('f-cal').value=e.calibre;
+      document.getElementById('f-mach').value=e.machine;
+      document.getElementById('f-nb').value=e.nbBoites;
+      document.getElementById('f-eff').value=e.effectif;
+      document.getElementById('f-dur').value=e.dureeH;
+      document.getElementById('f-op').value=e.operation||OPS[0];
+      document.getElementById('f-det').value=e.details||'';
+    }
+  }
+}
+
+function updateCalc(){
+  const nb=parseFloat(document.getElementById('f-nb')?.value)||0;
+  const eff=parseFloat(document.getElementById('f-eff')?.value)||0;
+  const dH=parseFloat(document.getElementById('f-dur')?.value)||0;
+  const cal=document.getElementById('f-cal')?.value||CALIBRES[0];
+  const mach=document.getElementById('f-mach')?.value||POSTES[0].nom;
+  if(!nb||!eff||!dH){document.getElementById('calc-box').style.display='none';return;}
+  const heOp=parseFloat((dH*eff).toFixed(2));
+  const cS=CSTD[cal]||0.1;
+  const p=POSTES.find(x=>x.nom===mach)||POSTES[0];
+  const trs=Math.min(100,parseFloat(((nb/(p.capH*dH))*100).toFixed(1)));
+  const cB=parseFloat((cS*(trs<75?1.08:0.97)).toFixed(4));
+  const cTR=parseFloat((cB*nb).toFixed(2));
+  const ec=parseFloat(((cB-cS)*nb).toFixed(2));
+  document.getElementById('calc-box').style.display='block';
+  document.getElementById('calc-grid').innerHTML=[['H×Op',heOp.toFixed(2)+'h'],['TRS',trs.toFixed(1)+'%'],['Coût/Bt',cB.toFixed(4)+' MAD'],['Coût Réel',fmt(cTR,0)+' MAD'],['Standard',fmt(cS*nb,0)+' MAD'],['Écart',(ec>=0?'+':'')+fmt(ec,0)]].map(([k,v],i)=>`<div class="calc-cell"><div class="calc-k">${k}</div><div class="calc-v" style="color:${k==='TRS'?cc(trs):k==='Écart'?(ec>0?'#ef4444':'#22c55e'):'var(--tx)'}">${v}</div></div>`).join('');
+}
+
+async function submitEntry(){
+  const nb=parseFloat(document.getElementById('f-nb')?.value)||0;
+  const eff=parseFloat(document.getElementById('f-eff')?.value)||0;
+  const dH=parseFloat(document.getElementById('f-dur')?.value)||0;
+  if(!nb||!eff||!dH) return;
+  const cal=document.getElementById('f-cal').value;
+  const mach=document.getElementById('f-mach').value;
+  const heOp=parseFloat((dH*eff).toFixed(2));
+  const cS=CSTD[cal]||0.1;
+  const p=POSTES.find(x=>x.nom===mach)||POSTES[0];
+  const trs=Math.min(100,parseFloat(((nb/(p.capH*dH))*100).toFixed(1)));
+  const cB=parseFloat((cS*(trs<75?1.08:0.97)).toFixed(4));
+  const entry={
+    id: editId||Date.now(),
+    date: document.getElementById('f-date').value,
+    mois: document.getElementById('f-mois').value,
+    annee: '2026', calibre: cal, machine: mach,
+    nbBoites: parseInt(nb), effectif: parseInt(eff), dureeH: dH,
+    duree: `${Math.floor(dH)}h${String(Math.round((dH%1)*60)).padStart(2,'0')}`,
+    heuresOp: heOp, hParBoite: nb>0?parseFloat((heOp/nb).toFixed(6)):0,
+    coutBoite: cB, coutStandard: cS,
+    coutTotalReel: parseFloat((cB*nb).toFixed(2)),
+    coutTotalStandard: parseFloat((cS*nb).toFixed(2)),
+    ecart: parseFloat(((cB-cS)*nb).toFixed(2)),
+    details: document.getElementById('f-det').value,
+    trs, operation: document.getElementById('f-op').value
+  };
+  const ne = editId ? allEntries.map(e=>e.id===editId?entry:e) : [entry,...allEntries];
+  editId = null;
+  await persistEntries(ne);
+  savedMsg=true; setTimeout(()=>{savedMsg=false; renderSaisie();},3000);
+  renderSaisie();
+}
+
+function sortSaisie(k){ sSortK===k?sSortD*=-1:Object.assign({},{sSortK:k,sSortD:-1}); sSortK=k; sSortD= sSortK===k?sSortD*-1:-1; renderSaisie(); }
+function cancelEdit(){ editId=null; renderSaisie(); }
+function editEntry(id){ editId=id; renderSaisie(); }
+async function delEntry(id){ if(confirm('Supprimer cet enregistrement ?')){ await persistEntries(allEntries.filter(e=>e.id!==id)); }}
+
+/* ---- PLANNING ---- */
+let planBesoins = Object.fromEntries(CALIBRES.map(c=>[c,0]));
+let planCfg = Object.fromEntries(POSTES.map(p=>[p.id,{heuresJ:8,effectif:p.effMin}]));
+let planJours = 5;
+
+function getPlanResults(){
+  return POSTES.map(p=>{
+    const cfg=planCfg[p.id];
+    const bb=CALIBRES.reduce((s,c)=>(CP[c]?.includes(p.id)?s+(planBesoins[c]||0):s),0);
+    const cap=p.capH*cfg.heuresJ*planJours;
+    const chg=cap>0?parseFloat(((bb/cap)*100).toFixed(1)):0;
+    const hb=p.capH>0?parseFloat((bb/p.capH).toFixed(1)):0;
+    const effBesoin=hb>0?Math.max(p.effMin,Math.min(p.effMax,Math.ceil(hb/cfg.heuresJ))):0;
+    return{...p,bb:Math.floor(bb),hb,chg,effBesoin,cfg};
+  });
+}
+
+function renderPlanning(){
+  const pr=getPlanResults();
+  const tB=Object.values(planBesoins).reduce((s,n)=>s+n,0);
+  const tH=pr.reduce((s,p)=>s+p.hb,0);
+  const tE=pr.reduce((s,p)=>s+(p.effBesoin||0),0);
+  const nS=pr.filter(p=>p.chg>90).length;
+  return `
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px">
+    ${[['Besoin',fmt(tB)+' boîtes','#0ea5e9'],['Heures',fmt(tH,1)+'h','#8b5cf6'],['Effectif',tE+' op.','#10b981'],['Surcharges',String(nS),nS>0?'#ef4444':'#22c55e']].map(([l,v,c])=>`<div class="kpi"><div class="kpi-bar" style="background:${c}30"></div><div class="kpi-label">${l}</div><div class="kpi-val" style="color:${c}">${v}</div></div>`).join('')}
+    <div class="kpi"><div class="kpi-label">Période</div><div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <button class="adj-btn" onclick="planJours=Math.max(1,planJours-1);renderPage()">-</button>
+      <span style="font-size:22px;font-weight:800;color:var(--tx)">${planJours}j</span>
+      <button class="adj-btn" onclick="planJours=Math.min(30,planJours+1);renderPage()">+</button>
+    </div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:18px">
+    <div class="card">
+      <div class="section-title">📦 Besoin par Calibre (${planJours}j)</div>
+      ${CALIBRES.map(cal=>`
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;color:#8aa0bc;font-weight:600;margin-bottom:4px">${cal}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="adj-btn" style="width:26px;height:26px;border-radius:5px;font-size:16px" onclick="planBesoins['${cal}']=Math.max(0,(planBesoins['${cal}']||0)-10000);renderPage()">−</button>
+            <input class="form-input" type="number" value="${planBesoins[cal]||0}" style="text-align:center;flex:1" onchange="planBesoins['${cal}']=Math.max(0,parseInt(this.value)||0);renderPage()">
+            <button class="adj-btn" style="width:26px;height:26px;border-radius:5px;font-size:16px" onclick="planBesoins['${cal}']=(planBesoins['${cal}']||0)+10000;renderPage()">+</button>
+          </div>
+        </div>`).join('')}
+      <button class="btn-sec" onclick="CALIBRES.forEach(c=>planBesoins[c]=0);renderPage()" style="margin-top:6px;width:100%;justify-content:center">⟳ Réinitialiser</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${pr.map(p=>{const bC=cc(p.chg),has=p.bb>0,cfg=planCfg[p.id];return`
+        <div class="plan-poste">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:10px;height:10px;border-radius:3px;background:${p.color}"></div>
+              <span style="font-size:13px;font-weight:700;color:var(--tx)">${p.nom}</span>
+              <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${bC}1a;color:${bC}">${has?cl(p.chg):'Non affecté'}</span>
+            </div>
+            <span style="font-size:24px;font-weight:800;color:${has?bC:'var(--tx4)'}">${has?p.chg.toFixed(0)+'%':'—'}</span>
+          </div>
+          <div class="progress-track"><div class="progress-bar" style="width:${Math.min(100,p.chg)}%;background:${bC}"></div></div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+            ${[['BOÎTES',fmt(p.bb),'var(--tx)'],['HEURES',p.hb+'h','var(--tx)'],['EFF.',p.effBesoin,'#10b981']].map(([k,v,c])=>`<div class="stat-cell"><div style="font-size:8px;color:var(--tx3);font-weight:700">${k}</div><div style="font-size:13px;font-weight:800;color:${c}">${v}</div></div>`).join('')}
+            <div class="stat-cell"><div style="font-size:8px;color:var(--tx3);font-weight:700;margin-bottom:3px">H/JOUR</div>
+              <div style="display:flex;align-items:center;gap:3px">
+                <button class="adj-btn" onclick="planCfg['${p.id}'].heuresJ=Math.max(6,planCfg['${p.id}'].heuresJ-1);renderPage()">-</button>
+                <span style="font-size:12px;font-weight:800;color:var(--cyan);min-width:18px;text-align:center">${cfg.heuresJ}</span>
+                <button class="adj-btn" onclick="planCfg['${p.id}'].heuresJ=Math.min(16,planCfg['${p.id}'].heuresJ+1);renderPage()">+</button>
+              </div>
+            </div>
+            <div class="stat-cell"><div style="font-size:8px;color:var(--tx3);font-weight:700;margin-bottom:3px">EFF.</div>
+              <div style="display:flex;align-items:center;gap:3px">
+                <button class="adj-btn" onclick="planCfg['${p.id}'].effectif=Math.max(${p.effMin},planCfg['${p.id}'].effectif-1);renderPage()">-</button>
+                <span style="font-size:12px;font-weight:800;color:#22c55e;min-width:18px;text-align:center">${cfg.effectif}</span>
+                <button class="adj-btn" onclick="planCfg['${p.id}'].effectif=Math.min(${p.effMax},planCfg['${p.id}'].effectif+1);renderPage()">+</button>
+              </div>
+            </div>
+            <div class="stat-cell"><div style="font-size:8px;color:var(--tx3);font-weight:700">MIN/MAX</div><div style="font-size:11px;font-weight:700;color:var(--tx3)">${p.effMin}–${p.effMax}</div></div>
+          </div>
+        </div>`}).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---- IMPLANTATION ---- */
+function renderImplantation(){
+  const pr=getPlanResults();
+  const machines=[{nom:'Etuieuse 125g Castello',x:88,y:392,w:143,h:35},{nom:'Etuieuse 80g Hermassa P1',x:88,y:347,w:143,h:35},{nom:'Etuieuse 125g Aitmelloul',x:88,y:302,w:143,h:35},{nom:'Etuieuse 80g Castello P3',x:88,y:257,w:143,h:35},{nom:'Etuieuse 125g Hermassa',x:88,y:212,w:143,h:35},{nom:'Fardeleuse Ait Melloul',x:248,y:347,w:128,h:35},{nom:'Fardeleuse Cermex',x:248,y:270,w:128,h:65},{nom:'Palettiseur',x:774,y:97,w:76,h:58},{nom:'Conv. MSE Manuel',x:392,y:412,w:430,h:33}];
+  const svgM=machines.map(m=>{
+    const r=pr.find(p=>p.nom===m.nom),chg=r?.chg||0,bC=r&&chg>0?cc(chg):'#172a3f';
+    const sl=m.nom.replace('Etuieuse ','Etu. ').replace('Fardeleuse ','Fard. ');
+    return`<g onmouseenter="document.getElementById('hov-info').innerHTML='<b>${m.nom}</b> — Charge: ${chg.toFixed(1)}% | Boîtes: ${fmt(r?.bb||0)} | Heures: ${r?.hb||0}h'" onmouseleave="document.getElementById('hov-info').innerHTML='Survolez une machine'" style="cursor:pointer">
+      <rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" fill="${r&&chg>0?cc(chg)+'14':'#0c1828'}" stroke="${bC}" stroke-width="1" rx="4"/>
+      ${r&&chg>0?`<rect x="${m.x+2}" y="${m.y+m.h-4}" width="${Math.max(2,(m.w-4)*Math.min(1,chg/100))}" height="3" fill="${cc(chg)}" rx="1.5"/>`:''}
+      ${r?`<rect x="${m.x+4}" y="${m.y+4}" width="6" height="6" fill="${r.color}" rx="1.5"/>`:''}
+      <text x="${m.x+m.w/2}" y="${m.y+m.h/2+1}" text-anchor="middle" dominant-baseline="middle" fill="${r&&chg>0?cc(chg):'#4a6a85'}" font-size="9" font-weight="700">${sl}</text>
+      ${r&&chg>0?`<text x="${m.x+m.w-4}" y="${m.y+11}" text-anchor="end" fill="${cc(chg)}" font-size="8" font-weight="800">${chg.toFixed(0)}%</text>`:''}
+    </g>`;
+  }).join('');
+  return`<div class="card">
+    <div style="font-size:14px;font-weight:800;color:var(--tx);margin-bottom:12px">🗺️ Plan d'Implantation — Unité PSF Silver Food</div>
+    <div id="hov-info" style="background:#060e1c;border:1px solid var(--bg3);border-radius:8px;padding:8px 16px;font-size:11px;color:var(--tx3);margin-bottom:10px;min-height:36px">Survolez une machine</div>
+    <div style="overflow-x:auto">
+      <svg viewBox="0 0 940 460" width="100%" style="display:block;background:#06101e;border-radius:8px">
+        ${[...Array(19)].map((_,i)=>`<line x1="0" y1="${i*25}" x2="940" y2="${i*25}" stroke="#0a1525" stroke-width="0.5"/>`).join('')}
+        ${[...Array(38)].map((_,i)=>`<line x1="${i*25}" y1="0" x2="${i*25}" y2="460" stroke="#0a1525" stroke-width="0.5"/>`).join('')}
+        <rect x="80" y="5" width="770" height="50" fill="#0b1828" stroke="#172a3f" stroke-width="1" rx="4"/>
+        <text x="465" y="25" text-anchor="middle" fill="#1e3a54" font-size="9" font-weight="700">CAPACITÉ STOCKAGE PSF</text>
+        <text x="465" y="40" text-anchor="middle" fill="#2a4a65" font-size="8">Sans Rayonnage: 466 EURO PAL — Avec Rayonnage: 250 EURO PAL</text>
+        <text x="88" y="100" fill="#172a3f" font-size="8" font-weight="700">ZONE PRODUCTION</text>
+        ${[{l:'Magasin EMB',x:6,y:120,w:68,h:190},{l:'Bureau Chef',x:6,y:318,w:68,h:55},{l:'Bureau Admin',x:6,y:378,w:68,h:58},{l:'Échantillo.',x:862,y:97,w:64,h:200}].map(s=>`<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="#0b1828" stroke="#172a3f" stroke-width="1" rx="4"/><text x="${s.x+s.w/2}" y="${s.y+s.h/2+4}" text-anchor="middle" fill="#2a4a65" font-size="8">${s.l}</text>`).join('')}
+        ${svgM}
+        <text x="88" y="452" fill="#172a3f" font-size="8" font-weight="600">SILVER FOOD — PSF — PLAN 2023</text>
+      </svg>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   START — identique à TalemApp
+   ============================================================ */
+window.addEventListener('load', function(){
+  try{
+    redirectUri = window.location.href.split('?')[0].split('#')[0];
+    msalApp = new msal.PublicClientApplication({
+      auth:{
+        clientId: CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+        redirectUri: redirectUri,
+        navigateToLoginRequestUrl: true
+      },
+      cache:{ cacheLocation:'localStorage', storeAuthStateInCookie:true }
+    });
+    initAuth();
+  } catch(e){
+    console.error('Erreur init MSAL:', e);
+    const el = document.getElementById('login-error');
+    if(el){ el.textContent='Erreur démarrage: '+e.message; el.style.display='block'; }
+    document.getElementById('login-screen').style.display='flex';
+  }
+});
+</script>
+</body>
+</html>
