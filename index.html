@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>PSF Conditionnement — Silver Food</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<style>
+:root,[data-theme="light"]{
+  --font-body:'Satoshi',Inter,system-ui,sans-serif;
+  --font-display:'Cabinet Grotesk',Inter,system-ui,sans-serif;
+  --text-xs:clamp(.75rem,.72rem + .2vw,.875rem);
+  --text-sm:clamp(.875rem,.84rem + .2vw,1rem);
+  --text-base:clamp(1rem,.98rem + .2vw,1.0625rem);
+  --text-lg:clamp(1.125rem,1.06rem + .35vw,1.35rem);
+  --text-xl:clamp(1.45rem,1.2rem + 1vw,2rem);
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;
+  --bg:#f4f7f8;--surface:#ffffff;--surface-2:#eef3f5;--surface-3:#e4edf0;--text:#14212b;--muted:#60717d;--faint:#8a98a3;
+  --primary:#0f766e;--primary-2:#155e75;--success:#2f7d32;--warn:#b7791f;--danger:#b83232;--border:rgba(20,33,43,.1);
+  --shadow:0 8px 30px rgba(12,23,36,.08);--radius:18px;--radius-sm:12px;--radius-xs:10px;
+}
+[data-theme="dark"]{
+  --bg:#08111b;--surface:#0d1a28;--surface-2:#102131;--surface-3:#163044;--text:#e8f0f4;--muted:#98aab7;--faint:#6f8290;
+  --primary:#28b3a7;--primary-2:#38a3c7;--success:#67c56b;--warn:#f0b44b;--danger:#f87171;--border:rgba(232,240,244,.1);
+  --shadow:0 18px 40px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:none;text-size-adjust:none;scroll-behavior:smooth}
+body{margin:0;font-family:var(--font-body);font-size:var(--text-base);background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+select,input,textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xs);padding:.82rem .9rem;outline:none;width:100%}
+select:focus,input:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 16%,transparent)}
+.app-shell{min-height:100dvh;display:grid;grid-template-columns:280px 1fr}
+.sidebar{background:linear-gradient(180deg,var(--surface),var(--surface-2));border-right:1px solid var(--border);padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-5);position:sticky;top:0;height:100dvh}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary-2));display:grid;place-items:center;color:#fff;box-shadow:var(--shadow)}
+.brand-mark svg{width:24px;height:24px}
+.brand-title{font-family:var(--font-display);font-size:1.1rem;font-weight:700;line-height:1}
+.brand-sub{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-top:4px}
+.mode-switch{display:flex;background:var(--surface-3);padding:4px;border-radius:999px;gap:4px}
+.mode-switch button{flex:1;border:none;border-radius:999px;padding:.65rem .9rem;background:transparent;font-size:var(--text-sm);font-weight:700}
+.mode-switch button.active{background:var(--surface);box-shadow:var(--shadow);color:var(--text)}
+.side-nav{display:grid;gap:8px}
+.side-nav button{display:flex;align-items:center;gap:10px;border:1px solid transparent;background:transparent;border-radius:14px;padding:.9rem 1rem;text-align:left;color:var(--muted);font-weight:700}
+.side-nav button.active{background:var(--surface);border-color:var(--border);color:var(--text)}
+.side-foot{margin-top:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-4)}
+.side-foot .mini{font-size:var(--text-xs);color:var(--muted)}
+.main{padding:var(--space-5);display:grid;gap:var(--space-5)}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-4);flex-wrap:wrap}
+.topbar h1{font-family:var(--font-display);font-size:var(--text-xl);margin:0 0 6px}
+.topbar p{margin:0;color:var(--muted);max-width:70ch}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:.7rem .95rem;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:var(--text-sm);font-weight:700}
+.chip strong{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.theme-btn,.action-btn,.ghost-btn{border:none;border-radius:12px;padding:.82rem 1rem;font-weight:700}
+.theme-btn{background:var(--surface);border:1px solid var(--border)}
+.action-btn{background:var(--primary);color:#fff}
+.ghost-btn{background:var(--surface-2);color:var(--text)}
+.hero-grid,.kpi-grid,.grid-2,.grid-3{display:grid;gap:var(--space-4)}
+.hero-grid{grid-template-columns:1.25fr .95fr}
+.kpi-grid{grid-template-columns:repeat(4,1fr)}
+.grid-2{grid-template-columns:1.1fr .9fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-5);box-shadow:var(--shadow)}
+.card h2,.card h3{margin:0 0 .45rem;font-size:var(--text-lg);font-family:var(--font-display)}
+.card p{margin:.2rem 0 0;color:var(--muted)}
+.hero-card{padding:var(--space-6)}
+.hero-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:var(--space-5)}
+.metric-box{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:1rem}
+.metric-box span{display:block;font-size:var(--text-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.metric-box strong{font-size:1.55rem;font-family:var(--font-display)}
+.kpi .label{font-size:var(--text-xs);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.kpi .value{font-size:1.8rem;font-family:var(--font-display);margin:.35rem 0}
+.kpi .sub{font-size:var(--text-sm);color:var(--muted)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.segment{display:flex;background:var(--surface-2);padding:4px;border-radius:999px;gap:4px}
+.segment button{border:none;background:transparent;padding:.55rem .9rem;border-radius:999px;font-weight:700;color:var(--muted)}
+.segment button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.form-grid.compact{grid-template-columns:repeat(4,1fr)}
+label span{display:block;font-size:var(--text-xs);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+textarea{min-height:92px;resize:vertical}
+.result-banner{margin-top:12px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--success) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--success) 28%,transparent);color:var(--text);display:none}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:.88rem .8rem;border-bottom:1px solid var(--border);text-align:left;font-size:var(--text-sm);white-space:nowrap}
+th{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+tr:hover td{background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:.3rem .6rem;border-radius:999px;background:var(--surface-2);font-size:var(--text-xs);font-weight:700}
+.level-low{color:var(--success)} .level-mid{color:var(--warn)} .level-high{color:var(--danger)}
+.plan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-4)}
+.plan-card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:1rem}
+.plan-card h4{margin:0 0 8px;font-size:1rem}
+.progress{height:10px;background:var(--surface-3);border-radius:999px;overflow:hidden;margin:.7rem 0 1rem}
+.progress > span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--primary-2))}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:var(--text-xs);color:var(--muted)}
+.legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.legend .lg1::before{background:var(--primary)} .legend .lg2::before{background:var(--warn)} .legend .lg3::before{background:var(--danger)}
+.mobile-nav{display:none}
+.hidden{display:none !important}
+canvas{width:100% !important;max-height:320px}
+@media (max-width: 1180px){.hero-grid,.grid-2,.kpi-grid,.plan-grid,.grid-3{grid-template-columns:1fr 1fr}.hero-metrics{grid-template-columns:1fr}}
+@media (max-width: 820px){
+  .app-shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:16px 16px 88px}
+  .hero-grid,.grid-2,.kpi-grid,.plan-grid,.grid-3,.form-grid,.form-grid.compact{grid-template-columns:1fr}
+  .mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 10px;z-index:20}
+  .mobile-nav button{border:none;background:transparent;padding:.6rem .3rem;border-radius:12px;font-size:12px;font-weight:700;color:var(--muted)}
+  .mobile-nav button.active{background:var(--surface-2);color:var(--text)}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h9a5 5 0 0 1 0 10H9v4H5V5Z"/><path d="M9 9h5a1 1 0 0 1 0 2H9"/></svg>
+        </div>
+        <div>
+          <div class="brand-title">PSF Conditionnement</div>
+          <div class="brand-sub">Silver Food — Pilotage charge & capacité</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-switch" aria-label="Version d'affichage">
+      <button id="pcModeBtn" class="active" type="button">Version PC</button>
+      <button id="mobileModeBtn" type="button">Version Mobile</button>
+    </div>
+
+    <nav class="side-nav">
+      <button class="nav-link active" data-view="dashboard">Tableau de bord</button>
+      <button class="nav-link" data-view="saisie">Saisie</button>
+      <button class="nav-link" data-view="planning">Planning</button>
+      <button class="nav-link" data-view="historique">Historique</button>
+    </nav>
+
+    <div class="side-foot">
+      <div class="mini">Vision V2</div>
+      <div style="font-weight:700;margin:6px 0 10px">Base décisionnelle révolutionnaire</div>
+      <div class="mini">Mesurer la performance qualitative, lire la charge par poste, estimer les heures et les effectifs pour chaque simulation.</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1>Indicateurs qualitatifs de l’unité PSF</h1>
+        <p>L’application exploite l’historique 2026 pour transformer les données de conditionnement en capacité poste, charge simulée, besoin horaire et besoin femme par scénario.</p>
+      </div>
+      <div class="top-actions">
+        <div class="chip"><strong>Utilisateur</strong> Mohamed</div>
+        <div class="chip"><strong>Jour</strong><select id="dayField"></select></div>
+        <div class="chip"><strong>Mois</strong><select id="monthField"></select></div>
+        <div class="chip"><strong>Année</strong><select id="yearField"></select></div>
+        <button class="theme-btn" type="button" data-theme-toggle>Mode</button>
+      </div>
+    </header>
+
+    <section id="view-dashboard" class="view-section">
+      <div class="hero-grid">
+        <article class="card hero-card">
+          <div class="badge">Lecture instantanée de la charge par poste</div>
+          <h2>Une base unique pour passer de l’historique à la simulation opérationnelle</h2>
+          <p>Chaque saisie alimente une logique de charge/capacité. L’objectif n’est plus seulement d’enregistrer des opérations, mais d’anticiper les heures nécessaires, les besoins en femmes et les goulets de l’unité produit semi fini vers produit fini.</p>
+          <div class="hero-metrics">
+            <div class="metric-box"><span>Calibres référencés</span><strong id="metricCalibres">0</strong></div>
+            <div class="metric-box"><span>Postes référencés</span><strong id="metricPostes">0</strong></div>
+            <div class="metric-box"><span>Opérations référencées</span><strong id="metricOperations">0</strong></div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Scénario actif</h3>
+          <p id="scenarioSummary">Aucune simulation lancée.</p>
+          <div style="margin-top:16px" class="legend">
+            <span class="lg1">Charge saine</span>
+            <span class="lg2">Charge sous tension</span>
+            <span class="lg3">Surcharge</span>
+          </div>
+          <div style="margin-top:18px">
+            <canvas id="loadChart" aria-label="Répartition de charge par poste"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="card kpi"><div class="label">Charge moyenne</div><div class="value" id="avgLoad">0%</div><div class="sub">Taux d’occupation moyen des postes simulés</div></article>
+        <article class="card kpi"><div class="label">Heures requises</div><div class="value" id="totalHours">0 h</div><div class="sub">Volume d’heures totales nécessaires</div></article>
+        <article class="card kpi"><div class="label">Femmes requises</div><div class="value" id="totalWomen">0</div><div class="sub">Effectif estimé pour tenir le scénario</div></article>
+        <article class="card kpi"><div class="label">Postes critiques</div><div class="value" id="criticalPosts">0</div><div class="sub">Postes dépassant 100% de charge</div></article>
+      </div>
+
+      <div class="grid-2">
+        <article class="card">
+          <div class="toolbar">
+            <div>
+              <h3>Charge par poste</h3>
+              <p>Les postes sont classés par niveau de saturation calculé à partir de la capacité horaire et du besoin simulé.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Poste</th><th>Capacité / h</th><th>Qté simulée</th><th>Heures</th><th>Femmes</th><th>Charge</th></tr></thead>
+              <tbody id="dashboardTable"></tbody>
+            </table>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Lecture managériale</h3>
+          <div id="insightsBox" class="grid-3"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-saisie" class="view-section hidden">
+      <div class="grid-2">
+        <article class="card">
+          <div class="toolbar">
+            <div>
+              <h2>Nouvelle simulation</h2>
+              <p>La saisie suit désormais le référentiel historique 2026 pour les calibres, les machines/postes et les opérations.</p>
+            </div>
+            <div class="segment" id="entryModeSwitch">
+              <button type="button" class="active" data-entry-mode="standard">Standard</button>
+              <button type="button" data-entry-mode="avance">Planification</button>
+            </div>
+          </div>
+          <form id="simForm">
+            <div class="form-grid compact">
+              <label><span>Jour</span><select id="simDay"></select></label>
+              <label><span>Mois</span><select id="simMonth"></select></label>
+              <label><span>Année</span><select id="simYear"></select></label>
+              <label><span>Utilisateur</span><input id="operatorField" value="Mohamed" /></label>
+            </div>
+            <div class="form-grid" style="margin-top:12px">
+              <label><span>Calibre</span><select id="calibreField"></select></label>
+              <label><span>Machine / Poste</span><select id="posteField"></select></label>
+              <label><span>Opération</span><select id="operationField"></select></label>
+              <label><span>Quantité simulée</span><input id="qtyField" type="number" min="1" value="500" /></label>
+              <label><span>Capacité horaire</span><input id="capacityField" type="number" min="1" value="180" /></label>
+              <label><span>Femmes disponibles</span><input id="womenField" type="number" min="1" value="3" /></label>
+            </div>
+            <label style="margin-top:12px;display:block"><span>Commentaire / hypothèse</span><textarea id="notesField" placeholder="Exemple : simulation spéciale pour montée de charge semaine 2"></textarea></label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+              <button class="action-btn" type="submit">Calculer la charge</button>
+              <button class="ghost-btn" type="button" id="resetBtn">Réinitialiser</button>
+            </div>
+            <div id="saveBanner" class="result-banner"></div>
+          </form>
+        </article>
+
+        <article class="card">
+          <h3>Référentiel de la base historique</h3>
+          <p>Les listes sont injectées à partir de l’onglet DATA du fichier TRS 2026, puis standardisées pour la nouvelle logique PSF_DB.</p>
+          <div class="grid-3" style="margin-top:14px">
+            <div class="plan-card"><div class="label">Calibres</div><h4 id="refCalibres">0</h4><div class="mini-text" id="calibrePreview"></div></div>
+            <div class="plan-card"><div class="label">Postes</div><h4 id="refPostes">0</h4><div class="mini-text" id="postePreview"></div></div>
+            <div class="plan-card"><div class="label">Opérations</div><h4 id="refOperations">0</h4><div class="mini-text" id="operationPreview"></div></div>
+          </div>
+          <div style="margin-top:16px">
+            <canvas id="historyChart" aria-label="Historique de référence 2026"></canvas>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-planning" class="view-section hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2>Planning capacitaire</h2>
+            <p>Le planning répartit le besoin horaire calculé par poste et affiche les besoins homme/femme à engager.</p>
+          </div>
+          <button class="ghost-btn" type="button" id="rebuildPlanBtn">Recalculer</button>
+        </div>
+        <div id="planningGrid" class="plan-grid"></div>
+      </div>
+    </section>
+
+    <section id="view-historique" class="view-section hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2>Historique simulé</h2>
+            <p>Cette zone conserve les scénarios saisis dans la session pour comparer la charge entre postes.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Calibre</th><th>Poste</th><th>Opération</th><th>Qté</th><th>Capacité/h</th><th>Heures</th><th>Femmes</th><th>Charge</th></tr></thead>
+            <tbody id="historyTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav" aria-label="Navigation mobile">
+  <button class="nav-link active" data-view="dashboard">Dashboard</button>
+  <button class="nav-link" data-view="saisie">Saisie</button>
+  <button class="nav-link" data-view="planning">Planning</button>
+  <button class="nav-link" data-view="historique">Historique</button>
+</nav>
+
+<script>
+const REFERENCE = {
+  calibres:["1000 GRS","106 GRS","125 GRS","1700 GRS","190 GRS","2000 GRS","400 GRS","425 GRS","800 GRS","90 GRS","900 GRS","AUTRE"],
+  postes:["Convoyeur Marquage","Etuieuse Ait melloul 125 G","Etuieuse Castello 125 Grs","Etuieuse Hermassa 125 G","Etuieuse Hermassa P1 80 GRS","Euieuse Tripack AIT Melloul 2026","Euieuse Tripack Castello","Fardeleuse Ait Melloul","Fardeleuse Cermix","Paletiseur 2","Paletiseur 3","Personnel Bureau","Table Manuelle"],
+  operations:["Collage Manuelle","Contrôle défaults de collage","ESSUIYAGE + ETIQUETAGE","ESSUIYAGE + MISE EN BARQ","ESSUIYAGE + MISE EN CARTON","ESSUIYAGE calcaire Manuelle","ETIQUETAGE+STIKER","LAVAGE Saleté Mauelle","MISE EN BARQ Manuelle","MISE EN ETUIS Manuelle","Mise en ETI Manuelle","Mise en Sticker  +CRT Manuelle","Mise en Sticker Manuelle","Reconditionement Changement de Marque","Reconditionnement","Reconditionnement + ETIQUETAGE","Reconditionnement + MISE EN ETUIS","Reconditionnement+ ETIQUETAGE","TRIE Manuelle","VASELINAGE"]
+};
+
+const capacityMap = {
+  "Convoyeur Marquage":220,
+  "Etuieuse Ait melloul 125 G":180,
+  "Etuieuse Castello 125 Grs":210,
+  "Etuieuse Hermassa 125 G":170,
+  "Etuieuse Hermassa P1 80 GRS":200,
+  "Euieuse Tripack AIT Melloul 2026":160,
+  "Euieuse Tripack Castello":165,
+  "Fardeleuse Ait Melloul":240,
+  "Fardeleuse Cermix":250,
+  "Paletiseur 2":300,
+  "Paletiseur 3":300,
+  "Personnel Bureau":90,
+  "Table Manuelle":75
+};
+
+const womenMap = {
+  "Convoyeur Marquage":2,"Etuieuse Ait melloul 125 G":3,"Etuieuse Castello 125 Grs":3,"Etuieuse Hermassa 125 G":3,
+  "Etuieuse Hermassa P1 80 GRS":3,"Euieuse Tripack AIT Melloul 2026":4,"Euieuse Tripack Castello":4,"Fardeleuse Ait Melloul":2,
+  "Fardeleuse Cermix":2,"Paletiseur 2":2,"Paletiseur 3":2,"Personnel Bureau":1,"Table Manuelle":5
+};
+
+const history = [];
+const months = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+let displayMode = window.innerWidth <= 820 ? 'mobile' : 'pc';
+let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+document.documentElement.setAttribute('data-theme', theme);
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function fillSelect(el, values, selected){
+  el.innerHTML = values.map(v => `<option value="${String(v).replace(/"/g,'&quot;')}">${v}</option>`).join('');
+  if (selected !== undefined) el.value = selected;
+}
+
+function initDateFields(){
+  const days = Array.from({length:31}, (_,i) => String(i+1).padStart(2,'0'));
+  const years = [2026,2027,2028];
+  [$('#dayField'), $('#simDay')].forEach(el => fillSelect(el, days, String(new Date().getDate()).padStart(2,'0')));
+  [$('#monthField'), $('#simMonth')].forEach(el => fillSelect(el, months, months[new Date().getMonth()]));
+  [$('#yearField'), $('#simYear')].forEach(el => fillSelect(el, years, '2026'));
+}
+
+function initReference(){
+  fillSelect($('#calibreField'), REFERENCE.calibres, REFERENCE.calibres[0]);
+  fillSelect($('#posteField'), REFERENCE.postes, REFERENCE.postes[0]);
+  fillSelect($('#operationField'), REFERENCE.operations, REFERENCE.operations[0]);
+  $('#metricCalibres').textContent = REFERENCE.calibres.length;
+  $('#metricPostes').textContent = REFERENCE.postes.length;
+  $('#metricOperations').textContent = REFERENCE.operations.length;
+  $('#refCalibres').textContent = REFERENCE.calibres.length;
+  $('#refPostes').textContent = REFERENCE.postes.length;
+  $('#refOperations').textContent = REFERENCE.operations.length;
+  $('#calibrePreview').textContent = REFERENCE.calibres.slice(0,4).join(' · ');
+  $('#postePreview').textContent = REFERENCE.postes.slice(0,4).join(' · ');
+  $('#operationPreview').textContent = REFERENCE.operations.slice(0,4).join(' · ');
+  syncCapacityDefaults();
+}
+
+function syncCapacityDefaults(){
+  const poste = $('#posteField').value;
+  $('#capacityField').value = capacityMap[poste] || 150;
+  $('#womenField').value = womenMap[poste] || 3;
+}
+
+function setView(view){
+  $$('.view-section').forEach(sec => sec.classList.add('hidden'));
+  $('#view-' + view).classList.remove('hidden');
+  $$('.nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+}
+
+function setDisplayMode(mode){
+  displayMode = mode;
+  document.body.classList.toggle('forced-mobile', mode === 'mobile');
+  $('#pcModeBtn').classList.toggle('active', mode === 'pc');
+  $('#mobileModeBtn').classList.toggle('active', mode === 'mobile');
+  if (mode === 'mobile') document.documentElement.style.fontSize = '14px';
+  else document.documentElement.style.fontSize = '16px';
+}
+
+function chargeClass(load){
+  if (load > 100) return 'level-high';
+  if (load >= 80) return 'level-mid';
+  return 'level-low';
+}
+
+function computeScenario(data){
+  const quantity = Number(data.quantity);
+  const capacity = Math.max(1, Number(data.capacity));
+  const women = Math.max(1, Number(data.women));
+  const hours = quantity / capacity;
+  const womenNeeded = Math.ceil(hours / 8 * women);
+  const load = Math.round((hours / 8) * 100);
+  return {...data, hours, womenNeeded, load};
+}
+
+function addScenario(entry){
+  history.unshift(entry);
+  renderAll();
+  $('#saveBanner').style.display = 'block';
+  $('#saveBanner').textContent = `Simulation enregistrée : ${entry.poste} — ${entry.hours.toFixed(1)} h, ${entry.womenNeeded} femmes, charge ${entry.load}%`;
+}
+
+function aggregateByPoste(){
+  if (!history.length) {
+    return REFERENCE.postes.slice(0,6).map(poste => ({ poste, capacity: capacityMap[poste] || 0, qty: 0, hours: 0, women: womenMap[poste] || 0, load: 0 }));
+  }
+  const map = new Map();
+  history.forEach(item => {
+    const current = map.get(item.poste) || { poste:item.poste, capacity:item.capacity, qty:0, hours:0, women:0, load:0 };
+    current.qty += item.quantity;
+    current.hours += item.hours;
+    current.women = Math.max(current.women, item.womenNeeded);
+    current.capacity = item.capacity;
+    current.load = Math.round((current.hours / 8) * 100);
+    map.set(item.poste, current);
+  });
+  return [...map.values()].sort((a,b) => b.load - a.load);
+}
+
+function renderDashboardTable(){
+  const rows = aggregateByPoste();
+  $('#dashboardTable').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.poste}</td>
+      <td>${r.capacity}</td>
+      <td>${Math.round(r.qty)}</td>
+      <td>${r.hours.toFixed(1)} h</td>
+      <td>${r.women}</td>
+      <td class="${chargeClass(r.load)}"><strong>${r.load}%</strong></td>
+    </tr>`).join('');
+  const avg = rows.length ? Math.round(rows.reduce((s,r)=>s+r.load,0)/rows.length) : 0;
+  const hours = rows.reduce((s,r)=>s+r.hours,0);
+  const women = rows.reduce((s,r)=>s+r.women,0);
+  const critical = rows.filter(r => r.load > 100).length;
+  $('#avgLoad').textContent = avg + '%';
+  $('#totalHours').textContent = hours.toFixed(1) + ' h';
+  $('#totalWomen').textContent = women;
+  $('#criticalPosts').textContent = critical;
+  $('#scenarioSummary').textContent = history.length ? `${history[0].calibre} · ${history[0].poste} · ${history[0].operation} · ${history[0].quantity} unités simulées.` : 'Aucune simulation lancée.';
+  const insights = [
+    { title:'Poste le plus chargé', value: rows[0] ? rows[0].poste : '—', meta: rows[0] ? rows[0].load + '%' : '0%' },
+    { title:'Réserve capacitaire', value: rows.find(r => r.load < 80)?.poste || 'Aucune', meta: 'poste respirable' },
+    { title:'Heures / journée', value: (hours/Math.max(1,rows.length)).toFixed(1) + ' h', meta: 'moyenne par poste' }
+  ];
+  $('#insightsBox').innerHTML = insights.map(item => `<div class="plan-card"><div class="label">${item.title}</div><h4>${item.value}</h4><p>${item.meta}</p></div>`).join('');
+}
+
+function renderPlanning(){
+  const rows = aggregateByPoste();
+  $('#planningGrid').innerHTML = rows.map(r => {
+    const width = Math.min(r.load, 140);
+    return `<div class="plan-card">
+      <h4>${r.poste}</h4>
+      <p>${r.qty.toFixed(0)} unités à traiter · ${r.capacity}/h</p>
+      <div class="progress"><span style="width:${width}%"></span></div>
+      <div class="grid-3">
+        <div><div class="label">Heures</div><strong>${r.hours.toFixed(1)} h</strong></div>
+        <div><div class="label">Femmes</div><strong>${r.women}</strong></div>
+        <div><div class="label">Charge</div><strong class="${chargeClass(r.load)}">${r.load}%</strong></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory(){
+  $('#historyTable').innerHTML = history.map(item => `
+    <tr>
+      <td>${item.day}/${item.month.slice(0,3)}/${item.year}</td>
+      <td>${item.calibre}</td>
+      <td>${item.poste}</td>
+      <td>${item.operation}</td>
+      <td>${item.quantity}</td>
+      <td>${item.capacity}</td>
+      <td>${item.hours.toFixed(1)} h</td>
+      <td>${item.womenNeeded}</td>
+      <td class="${chargeClass(item.load)}">${item.load}%</td>
+    </tr>`).join('');
+}
+
+let loadChart, historyChart;
+function renderCharts(){
+  const rows = aggregateByPoste().slice(0,6);
+  const chartColors = rows.map(r => r.load > 100 ? '#f87171' : r.load >= 80 ? '#f0b44b' : '#28b3a7');
+  if (loadChart) loadChart.destroy();
+  loadChart = new Chart($('#loadChart'), {
+    type:'bar',
+    data:{ labels: rows.map(r=>r.poste), datasets:[{ label:'Charge %', data: rows.map(r=>r.load), backgroundColor: chartColors, borderRadius:8 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, max:140, grid:{color:'rgba(128,128,128,.15)'}}, x:{grid:{display:false}} } }
+  });
+  if (historyChart) historyChart.destroy();
+  historyChart = new Chart($('#historyChart'), {
+    type:'doughnut',
+    data:{ labels:['Calibres','Postes','Opérations'], datasets:[{ data:[REFERENCE.calibres.length,REFERENCE.postes.length,REFERENCE.operations.length], backgroundColor:['#28b3a7','#38a3c7','#f0b44b'], borderWidth:0 }]},
+    options:{ plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function renderAll(){
+  renderDashboardTable();
+  renderPlanning();
+  renderHistory();
+  renderCharts();
+}
+
+$('#simForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const scenario = computeScenario({
+    day: $('#simDay').value,
+    month: $('#simMonth').value,
+    year: $('#simYear').value,
+    operator: $('#operatorField').value,
+    calibre: $('#calibreField').value,
+    poste: $('#posteField').value,
+    operation: $('#operationField').value,
+    quantity: Number($('#qtyField').value || 0),
+    capacity: Number($('#capacityField').value || 1),
+    women: Number($('#womenField').value || 1),
+    notes: $('#notesField').value.trim()
+  });
+  addScenario(scenario);
+  setView('dashboard');
+});
+
+$('#posteField').addEventListener('change', syncCapacityDefaults);
+$('#resetBtn').addEventListener('click', () => {
+  $('#qtyField').value = 500; $('#notesField').value = ''; syncCapacityDefaults(); $('#saveBanner').style.display = 'none';
+});
+$('#rebuildPlanBtn').addEventListener('click', renderAll);
+$$('.nav-link').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+$('#pcModeBtn').addEventListener('click', () => setDisplayMode('pc'));
+$('#mobileModeBtn').addEventListener('click', () => setDisplayMode('mobile'));
+$('[data-theme-toggle]').addEventListener('click', () => { theme = theme === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', theme); renderCharts(); });
+$$('#entryModeSwitch button').forEach(btn => btn.addEventListener('click', () => { $$('#entryModeSwitch button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }));
+
+initDateFields();
+initReference();
+setDisplayMode(displayMode);
+renderAll();
+</script>
+</body>
+</html>
